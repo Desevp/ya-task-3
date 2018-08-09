@@ -1,7 +1,5 @@
 'use strict';
 
-function getSchedule() {
+function getSchedule(data) {
 
 }
-
-getSchedule();

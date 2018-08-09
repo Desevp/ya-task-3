@@ -15,9 +15,10 @@ var config = {
 	port: 9000
 };
 
+let files = ['*.js', '*.json'];
 
 gulp.task('reload', function () {
-  return gulp.src('*.js')
+  return gulp.src(files)
     .pipe(reload({
 			stream: true
 		}));
@@ -29,6 +30,6 @@ gulp.task('default', ['serve']);
 // Локальный сервер, слежение
 gulp.task('serve', function() {
   browserSync.init(config);
-  gulp.watch(['*.js'],['reload']);
+  gulp.watch([files],['reload']);
 
 });
