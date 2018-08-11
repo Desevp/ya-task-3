@@ -50,12 +50,31 @@ function getSchedule(data) {
     console.log(duration);
     console.log(mode);
 
-    console.log('!!!!');
 
 
-    let curModeFunc = checkMode.bind(null, mode);
 
 
+
+    // powers[3] = 3;
+    // console.log(powers);
+
+
+    let commonCheck = function(hour) {
+      // debugger
+      let curModeFunc = checkMode.bind(null, mode);
+      let curPowerFunc = _checkPower.bind(null, power);
+
+      console.log(curModeFunc(hour));
+      console.log(curPowerFunc(hour));
+
+      return curModeFunc(hour)&& curPowerFunc(hour);
+    }
+
+    for (var i = 0; i < 24; i++) {
+
+      console.log(i+'_______'+commonCheck(i));
+
+    }
 
 
 
@@ -67,7 +86,7 @@ function getSchedule(data) {
     // checkMode(hour, mode)
 
     // console.log(Math.round(findMinSubArray(prices, duration)[1]*power/1000 * 10000)/10000);
-    console.log(Math.round(findMinSubArray(prices, duration, curModeFunc)[1] * 10000)/10000);
+    console.log('!!!!!!!!!!!!!!!!!'+Math.round(findMinSubArray(prices, duration, commonCheck)[1] * 10000)/10000);
 
     // console.log(checkMode(23, mode));
   }
@@ -159,17 +178,22 @@ function getSchedule(data) {
     switch (mode) {
       case 'day':
         if ((hour >= defaultMode[mode].from) && (hour < defaultMode[mode].to)) {
-          return true;
+          return 1;
         }
-        return false;
+        return 0;
       case 'night':
         if (((hour >= defaultMode[mode].from) && (hour < 24)) || (hour < defaultMode[mode].to)) {
-          return true;
+          return 1;
         }
-        return false;
+        return 0;
       default:
-        return true;
+        return 1;
     }
+  }
+
+  function _checkPower(powerDevice, hour) {
+    console.log('Разность силы: ' + (powers[hour] - powerDevice));
+    return (((powers[hour] - powerDevice) > 0)?1:0)
   }
 
   function _comparareDevices(obj1, obj2) {
