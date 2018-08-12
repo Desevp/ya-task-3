@@ -1,11 +1,15 @@
 'use strict';
 
 function getSchedule(data) {
-  let schedule = Array(24).fill([]);
   let devices = data.devices.sort(_comparareDevices);
   let rates = data.rates;
   let powers = Array(24).fill(data.maxPower);
   let prices = Array(24).fill(0);
+  let schedule = Array(24);
+  let consumedEnergy = {
+    value: 0,
+    devices: {}
+  }
 
   const defaultMode = {
     'day': {
@@ -18,8 +22,11 @@ function getSchedule(data) {
     }
   }
 
-  // Заполняем почасовую цену
+  for (let i = 0; i < schedule.length; i++) {
+    schedule[i]=[];
+  }
 
+  // Заполняем почасовую цену
   for (let key in rates) {
     let from = rates[key].from;
     let to = rates[key].to;
@@ -33,64 +40,40 @@ function getSchedule(data) {
     }
   }
 
-
-  console.log(schedule);
-  console.log(devices);
-  console.log(prices);
-  console.log(powers);
-
   // Распеределяем приборы
-
   for (let item in devices) {
     let id = devices[item].id;
     let duration = devices[item].duration;
     let mode = devices[item].mode;
     let power = devices[item].power;
-    console.log(id);
-    console.log(duration);
-    console.log(mode);
-
-
-
-
-
-
-    // powers[3] = 3;
-    // console.log(powers);
-
 
     let commonCheck = function(hour) {
-      // debugger
       let curModeFunc = checkMode.bind(null, mode);
       let curPowerFunc = _checkPower.bind(null, power);
-
-      console.log(curModeFunc(hour));
-      console.log(curPowerFunc(hour));
 
       return curModeFunc(hour)&& curPowerFunc(hour);
     }
 
-    for (var i = 0; i < 24; i++) {
+    let beginSchedule = findMinSubArray(prices, duration, commonCheck);
 
-      console.log(i+'_______'+commonCheck(i));
-
-    }
-
-
-
-
-
-
-    // console.log(dayFunc(4));
-
-    // checkMode(hour, mode)
-
-    // console.log(Math.round(findMinSubArray(prices, duration)[1]*power/1000 * 10000)/10000);
-    console.log('!!!!!!!!!!!!!!!!!'+Math.round(findMinSubArray(prices, duration, commonCheck)[1] * 10000)/10000);
-
-    // console.log(checkMode(23, mode));
+    addSchedule(beginSchedule[0], duration, id, power);
+    addConsumedEnergy(id, Math.round(beginSchedule[1] * power/1000*10000)/10000);
   }
 
+  return {schedule, consumedEnergy}
+
+  function addSchedule(beginIndex, count, id, power) {
+    for (let i = beginIndex; i < beginIndex + count; i++) {
+      let curIndex = (i < schedule.length)?i:(i - schedule.length);
+      schedule[curIndex].push(id);
+      powers[curIndex] -= power;
+    }
+  }
+
+  function addConsumedEnergy(id, value) {
+    consumedEnergy.value +=value;
+    consumedEnergy.devices[id] = value;
+  }
 
   function findFirstSubArray(array, l, checkFunc) {
     let begin =0;
@@ -108,8 +91,8 @@ function getSchedule(data) {
 
     function checkLength(k) {
       if (k!==0) {
-        if (checkFunc(begin + k)) {
-          minimum += array[begin + k];
+        if (checkFunc(begin + k - 1)) {
+          minimum += array[begin + k - 1];
           return checkLength(k-1);
         }
         else {
@@ -119,37 +102,19 @@ function getSchedule(data) {
         }
       }
       else {
-        begin++;
         return true;
       }
     }
   }
 
-  // TEST
-
-  // function test(a) {
-  //   if ((a === 1) || (a === 5)){
-  //     return false;
-  //   }
-  //
-  //   return true;
-  // }
-
-
   function findMinSubArray(nums, k, checkFunc) {
     let beginValue = findFirstSubArray(nums, k, checkFunc);
     let curr_min = beginValue.min;
+    let max_so_far = curr_min;
+    let begin_index = beginValue.beginIndex;
+    let falseCount = 0; // показывает сколько осталось до подходящего значения
 
-    console.log(beginValue);
-
-    var max_so_far = curr_min;
-    var begin_index = beginValue.beginIndex;
-    var falseCount = 0; // показывает сколько осталось до свободного значения
-
-
-    for (var j = k + begin_index; j < nums.length + k - 1; j++) {
-
-
+    for (let j = k + begin_index; j < nums.length + k - 1; j++) {
       let nextIndex = (j < nums.length)?j: j - nums.length;
       curr_min += (nums[nextIndex] - nums[j - k]);
 
@@ -157,17 +122,13 @@ function getSchedule(data) {
         falseCount = k;
       }
 
-      console.log(nextIndex + '_____');
-
       if (falseCount === 0) {
-        console.log(curr_min);
         if (curr_min < max_so_far) {
           max_so_far = curr_min;
           begin_index = j - k + 1;
         }
       }
       else {
-        console.log(curr_min + 'плохое');
         falseCount--;
       }
     }
@@ -192,8 +153,7 @@ function getSchedule(data) {
   }
 
   function _checkPower(powerDevice, hour) {
-    console.log('Разность силы: ' + (powers[hour] - powerDevice));
-    return (((powers[hour] - powerDevice) > 0)?1:0)
+    return (((powers[hour] - powerDevice) >= 0)?1:0)
   }
 
   function _comparareDevices(obj1, obj2) {
