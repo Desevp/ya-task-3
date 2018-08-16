@@ -26,7 +26,7 @@ function getSchedule(data) {
     schedule[i]=[];
   }
 
-  // Заполняем почасовую цену
+  // Заполнение почасовой цены
   for (let key in rates) {
     let from = rates[key].from;
     let to = rates[key].to;
@@ -40,7 +40,7 @@ function getSchedule(data) {
     }
   }
 
-  // Распеределяем приборы
+  // Распеределение очередности распределения приборов
   for (let item in devices) {
     let id = devices[item].id;
     let duration = devices[item].duration;
@@ -62,6 +62,11 @@ function getSchedule(data) {
 
   return {schedule, consumedEnergy}
 
+  // Добавление в расписание
+  // beginIndex - индекс с которого начинается промежуток времени,
+  // count - число элементов (длительность работы прибора),
+  // id - идентификатор прибора;
+  // power - мощность прибора
   function addSchedule(beginIndex, count, id, power) {
     for (let i = beginIndex; i < beginIndex + count; i++) {
       let curIndex = (i < schedule.length)?i:(i - schedule.length);
@@ -70,11 +75,21 @@ function getSchedule(data) {
     }
   }
 
+  // Добавление данных о приборе в статистику
+  // id - идентификатор
+  // value - значение
   function addConsumedEnergy(id, value) {
     consumedEnergy.value +=value;
     consumedEnergy.devices[id] = value;
   }
 
+  // Поиск первого подходящего промежутка (необходимо для алгоритма поиска подмассива)
+  // array - массив, в котором ищем
+  // l - длина искомого подмассива
+  // checkFunc - функция с уловиями для проверки
+  // RETURN object
+  // beginIndex - индекс, с которого начинается искомый подмассив (-1, если такого нет)
+  // min - минимальная стоимость на этом участке
   function findFirstSubArray(array, l, checkFunc) {
     let begin =0;
     let result = -1;
@@ -107,6 +122,14 @@ function getSchedule(data) {
     }
   }
 
+  // Поиск подмассива с минимальной суммой, удовлетворяющий условиям
+  // nums - массив
+  // k - длина подмассива
+  // checkFunc - функция проверки
+  // RETURN array
+  // begin_index - индекс, с которого начинается необходимый подмассив
+  // max_so_far - минимальная стоимость на этом участке
+
   function findMinSubArray(nums, k, checkFunc) {
     let beginValue = findFirstSubArray(nums, k, checkFunc);
     let curr_min = beginValue.min;
@@ -135,6 +158,10 @@ function getSchedule(data) {
     return [begin_index, max_so_far];
   }
 
+  // Проверка mode (день/ночь)
+  // mode - mode
+  // hour - проверяемый час
+  // RETURN true/false
   function checkMode(mode, hour) {
     switch (mode) {
       case 'day':
@@ -152,14 +179,21 @@ function getSchedule(data) {
     }
   }
 
+  // Проверка мощности
+  // powerDevice - мощность прибора
+  // hour - проверяемый час
+  // RETURN true/false
   function _checkPower(powerDevice, hour) {
     return (((powers[hour] - powerDevice) >= 0)?1:0)
   }
 
+  // Функция сортировки приборов
+  // obj{i} - iый прибор
   function _comparareDevices(obj1, obj2) {
     return (obj2.duration - obj1.duration)||(_weightMode(obj2.mode) - _weightMode(obj1.mode))||(obj2.power - obj1.power);
   }
 
+  // Функция проверки mode (для сортировки приборов)
   function _weightMode(mode) {
       switch (mode) {
       case 'day':
